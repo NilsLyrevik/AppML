@@ -1,0 +1,235 @@
+PROJECT PLAN: TEXT CLASSIFICATION SYSTEM FOR BIRCH
+
+1. UNDERSTAND THE TASK AND SET GOALS
+
+* Task: Classify text into positive, neutral, or negative sentiment.
+* Define success:
+
+  * Good performance (accuracy, F1-score)
+  * Clear explanations of choices
+  * Reproducible system
+* Plan to compare:
+
+  * Crowdsourced vs gold training data
+  * Baseline vs improved models
+
+---
+
+2. REFLECT ON ANNOTATION TASK
+
+* Describe your experience labeling data:
+
+  * What was difficult? (e.g., sarcasm, unclear text)
+* Suggest improvements:
+
+  * Better labeling guidelines
+  * Multiple annotators per example
+  * Use majority voting or review process
+
+---
+
+3. DATA EXPLORATION
+
+3.1 Basic Inspection
+
+* Load datasets
+* Check for:
+
+  * Missing values
+  * Duplicates
+  * Formatting issues
+
+3.2 Label Distribution
+
+* Count number of examples per class
+* Identify class imbalance
+
+3.3 Compare Crowdsourced vs Gold Data
+
+* Match same texts
+* Measure agreement (e.g., percentage agreement)
+* Identify disagreements and patterns
+
+3.4 Manual Inspection
+
+* Look at difficult or inconsistent examples
+* Identify patterns (e.g., slang, short texts, sarcasm)
+
+---
+
+4. DATA PREPROCESSING
+
+4.1 Text Cleaning
+
+* Convert to lowercase
+* Remove:
+
+  * URLs
+  * punctuation (optional)
+  * stopwords (optional)
+* Consider keeping emojis
+
+4.2 Feature Representation
+
+* Use:
+
+  * Bag-of-Words
+  * TF-IDF
+* Consider n-grams (unigrams + bigrams)
+* Justify all choices
+
+---
+
+5. BASELINE MODEL
+
+* Implement simple baseline:
+
+  * Majority class OR simple default model
+* Purpose:
+
+  * Show improvement over trivial solution
+
+---
+
+6. MODEL DEVELOPMENT
+
+6.1 Try Multiple Models
+
+* Example models:
+
+  * Naive Bayes
+  * Logistic Regression
+  * Optional: SVM
+* Compare performance
+
+6.2 Hyperparameter Tuning
+
+* Use grid search or manual tuning
+* Tune:
+
+  * Regularization
+  * n-gram range
+  * feature size
+* Keep tuning controlled and justified
+
+---
+
+7. TRAINING EXPERIMENTS
+
+7.1 Train on Crowdsourced Data
+
+* Train model
+* Evaluate on test set
+
+7.2 Train on Gold Data
+
+* Train model using same pipeline
+* Evaluate on same test set
+
+7.3 Compare Results
+
+* Analyze differences
+* Explain causes (e.g., label quality)
+
+---
+
+8. EVALUATION
+
+8.1 Metrics
+
+* Accuracy
+* Precision
+* Recall
+* F1-score
+
+8.2 Confusion Matrix
+
+* Identify misclassification patterns
+
+8.3 Error Analysis
+
+* Inspect incorrect predictions
+* Explain possible causes
+
+---
+
+9. RELIABILITY AND TRUST
+
+9.1 Data Quality
+
+* Discuss agreement between datasets
+* Impact of noisy labels
+
+9.2 Model Behavior
+
+* Check for bias toward certain classes
+* Identify weaknesses
+
+9.3 Risk Analysis
+
+* When might the system fail?
+
+  * sarcasm
+  * slang
+  * domain differences
+
+---
+
+10. REPRODUCIBILITY
+
+* Organize code clearly:
+
+  * data loading
+  * preprocessing
+  * training
+  * evaluation
+* Include instructions for running code
+* Use fixed random seeds
+
+---
+
+11. TIME PRIORITIZATION
+
+Focus on:
+
+* Clean pipeline
+* Strong evaluation
+* Clear comparisons
+
+Deprioritize if needed:
+
+* Deep learning
+* Complex feature engineering
+
+---
+
+12. FUTURE IMPROVEMENTS
+
+* More advanced models
+* Better preprocessing
+* Improved annotation quality
+* Ensemble methods
+
+---
+
+WORKFLOW ORDER
+
+1. Data exploration
+2. Annotation reflection
+3. Baseline model
+4. First real model
+5. Hyperparameter tuning
+6. Training experiments
+7. Evaluation and error analysis
+8. Documentation
+
+---
+
+KEY PRINCIPLES
+
+* Always explain decisions
+* Analyze results, not just report them
+* Answer:
+
+  * Why was this method chosen?
+  * What did we learn?
