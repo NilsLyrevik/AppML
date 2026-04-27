@@ -26,11 +26,6 @@ def train_logistic_regression(X_train, y_train):
     model.fit(X_train, y_train)
     return model
 
-# helpers for reading csv files (all have two columns: 'sentiment' and 'text')
-def read_csv(file_path):
-    df = pd.read_csv(file_path)
-    return df['sentiment'], df['label']
-
 def test_train_split(X, y, test_size=0.2):
     (X_train, X_test, y_train, y_test) = train_test_split(X, y, test_size=test_size, random_state=1337)
     return X_train, X_test, y_train, y_test
