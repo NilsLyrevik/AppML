@@ -91,8 +91,8 @@ def main():
     
     # scores for writing later
     agr_score, acc_score = agreement_accuracy_score(cs_train,gold_train)
-    print("Agreement score (kappa) is: ",agr_score)
-    print("Accuracy score is: ",acc_score)
+    print("Agreement score (kappa) is (when comparing datasets): ",agr_score)
+    print("Accuracy score is (when comparing datasets): ",acc_score)
 
     # Use-TF-IDF vectorizer
     X_cs = tfidf_vectorize(cs_train["text"])
@@ -109,8 +109,26 @@ def main():
     print("Majority class Kappa :", majority_kappa)
     print("Majority class Accuracy :", majority_acc)
     
+    # Naive Bayes Model (only on gold)
+    X_train_nb, X_test_nb, y_train_nb, y_test_nb = test_train_split(X_gold, y_gold)
+    nb_model = train_naive_bayes(X_train_nb, y_train_nb)
+    nb_predictions = nb_model.predict(X_test_nb)
+    nb_kappa = cohen_kappa_score(nb_predictions, y_test_nb)
+    nb_acc = accuracy_score(nb_predictions, y_test_nb)
+    print("Naive Bayes Kappa :", nb_kappa)
+    print("Naive Bayes Accuracy :", nb_acc)    
 
+    # Logistic Regression Model (only on gold)
+    X_train_lr, X_test_lr, y_train_lr, y_test_lr = test_train_split(X_gold, y_gold)
+    lr_model = train_logistic_regression(X_train_lr, y_train_lr)
+    lr_predictions = lr_model.predict(X_test_lr)
+    lr_kappa = cohen_kappa_score(lr_predictions, y_test_lr)
+    lr_acc = accuracy_score(lr_predictions, y_test_lr)
+    print("Logistic Regression Kappa :", lr_kappa)
+    print("Logistic Regression Accuracy :", lr_acc)
     
+
+
     
 
 if __name__ == "__main__":
