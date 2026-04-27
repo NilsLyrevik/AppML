@@ -1,5 +1,6 @@
 import pandas as pd
 import html
+from sklearn.metrics import cohen_kappa_score
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
@@ -30,6 +31,11 @@ def test_train_split(X, y, test_size=0.2):
     (X_train, X_test, y_train, y_test) = train_test_split(X, y, test_size=test_size, random_state=1337)
     return X_train, X_test, y_train, y_test
 
+def agreement_score(crowd, gold):
+    kappa = cohen_kappa_score(crowd["sentiment"], gold["sentiment"])
+
+    print(kappa)
+
 def main():
     cs_train = pd.read_csv("data/crowdsourced_train.csv", sep="\t")
     gold_train = pd.read_csv("data/gold_train.csv", sep="\t")
@@ -52,6 +58,8 @@ def main():
 
     print(cs_train)
 
+    agreement_score(cs_train, gold_train)
+    
 
 if __name__ == "__main__":
     main()
