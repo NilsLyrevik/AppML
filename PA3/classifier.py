@@ -1,5 +1,7 @@
+# Imports
 import pandas as pd
 import html
+from matplotlib import pyplot as plt
 from sklearn.metrics import cohen_kappa_score, accuracy_score
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
@@ -60,6 +62,24 @@ def agreement_accuracy_score(crowd, gold):
 
     return (kappa,acc)
 
+# helper function to plot kappa and accuracy scores for all models (to remove bloat from main)
+def plot_model_kappa_accuracy(kappa_scores, acc_scores):
+    models = ["Majority Class", "Naive Bayes", "Logistic Regression"]
+    x = range(len(models))
+    plt.figure(figsize=(12, 6))
+    plt.subplot(1, 2, 1)
+    plt.bar(x, kappa_scores, color=['blue', 'orange', 'green'])
+    plt.xticks(x, models)
+    plt.title('Kappa Scores by Model')
+    plt.ylabel('Kappa Score')
+    plt.subplot(1, 2, 2)
+    plt.bar(x, acc_scores, color=['blue', 'orange', 'green'])
+    plt.xticks(x, models)
+    plt.title('Accuracy Scores by Model')
+    plt.ylabel('Accuracy Score')
+    plt.tight_layout()
+    # save plot as image 
+    plt.savefig("plots/model_kappa_accuracy.png")
 
 
 def feature_processing(cs):
@@ -72,7 +92,9 @@ def feature_processing(cs):
     # remove URLs
     cs["text"] = cs["text"].str.replace(r"http\S+|www\.\S+", "", regex=True)
 
+# THIS IS WHERE ENTIRE PIPELINE HAPPENS!
 def main():
+    # read/ load data
     cs_train = pd.read_csv("data/crowdsourced_train.csv", sep="\t")
     gold_train = pd.read_csv("data/gold_train.csv", sep="\t")
 
@@ -109,7 +131,7 @@ def main():
     print("Majority class Kappa :", majority_kappa)
     print("Majority class Accuracy :", majority_acc)
     
-    # Naive Bayes Model (only on gold)
+    # Naive Bayes Model, Model nr 1
     X_train_nb, X_test_nb, y_train_nb, y_test_nb = test_train_split(X_gold, y_gold)
     nb_model = train_naive_bayes(X_train_nb, y_train_nb)
     nb_predictions = nb_model.predict(X_test_nb)
@@ -118,7 +140,7 @@ def main():
     print("Naive Bayes Kappa :", nb_kappa)
     print("Naive Bayes Accuracy :", nb_acc)    
 
-    # Logistic Regression Model (only on gold)
+    # Logistic Regression Model, Model nr 2 
     X_train_lr, X_test_lr, y_train_lr, y_test_lr = test_train_split(X_gold, y_gold)
     lr_model = train_logistic_regression(X_train_lr, y_train_lr)
     lr_predictions = lr_model.predict(X_test_lr)
@@ -126,7 +148,12 @@ def main():
     lr_acc = accuracy_score(lr_predictions, y_test_lr)
     print("Logistic Regression Kappa :", lr_kappa)
     print("Logistic Regression Accuracy :", lr_acc)
-    
+
+    # plot all models kappa and accuracy scores using helper
+    kappa_scores = [majority_kappa, nb_kappa, lr_kappa]
+    acc_scores = [majority_acc, nb_acc, lr_acc]
+    plot_model_kappa_accuracy(kappa_scores, acc_scores)
+
 
 
     
