@@ -1,4 +1,4 @@
-# Imports
+# Imports 
 import pandas as pd
 import html
 from matplotlib import pyplot as plt
@@ -8,6 +8,8 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import GridSearchCV
 
 
 # FEATURE REPRESENTATION 
@@ -16,41 +18,54 @@ def tfidf_vectorize(corpus):
     vectorizer = TfidfVectorizer()
     X = vectorizer.fit_transform(corpus)
     return X
+
 # BoW vectorizer
 def bow_vectorize(corpus):
     vectorizer = CountVectorizer()
     X = vectorizer.fit_transform(corpus)
     return X
-# Word embeddings vectorizer
+
+# Word embeddings vectorizer (OM VI VILL ANVÄNDA DEN)
 def word_embeddings_vectorize(corpus, embedding_model):
-    # This is a placeholder function. In practice, you would load a pre-trained embedding model (like GloVe or Word2Vec)
-    # and average the word vectors for each document in the corpus.
     pass
+
 
 # CLASSIFIER 1: Naive Bayes
 # Skriv lite mer om Naive Bayes HÄR
-def train_naive_bayes(X_train, y_train):
-    model = MultinomialNB()
-    model.fit(X_train, y_train)
+def train_naive_bayes_pipeline():
+    model = Pipeline([
+        ("vectorizer", TfidfVectorizer()),
+        ("classifier", MultinomialNB())
+    ])
     return model
+
 
 # CLASSIFIER 2: Logistic Regression
 # Skriv lite mer om Logistic Regression HÄR
-def train_logistic_regression(X_train, y_train):
-    model = LogisticRegression(max_iter=1000)
-    model.fit(X_train, y_train)
+def train_logistic_regression_pipeline():
+    model = Pipeline([
+        ("vectorizer", TfidfVectorizer()),
+        ("classifier", LogisticRegression(max_iter=1000))
+    ])
     return model
 
-def train_svc(X_train, y_train):
-    model = SVC(kernel='linear')
-    model.fit(X_train, y_train)
+# CLASSIFIER 3: Support Vector Classifier (SVC)
+# Skriv lite mer om SVC HÄR
+def train_svc_pipeline():
+    model = Pipeline([
+        ("vectorizer", TfidfVectorizer()),
+        ("classifier", SVC(kernel='linear'))
+    ])
     return model
+
 
 def test_train_split(X, y, test_size=0.2):
-    (X_train, X_test, y_train, y_test) = train_test_split(X, y, test_size=test_size, random_state=1337)
+    (X_train, X_test, y_train, y_test) = train_test_split(
+        X, y, test_size=test_size, random_state=1337
+    )
     return X_train, X_test, y_train, y_test
 
-# 
+
 def agreement_accuracy_score(crowd, gold):
     df = crowd.merge(gold, on="text", suffixes=("_crowd", "_gold"))
 
@@ -66,37 +81,42 @@ def agreement_accuracy_score(crowd, gold):
         df["sentiment_gold"]
     )
 
-    return (kappa,acc)
+    return (kappa, acc)
 
-# helper function to plot kappa and accuracy scores for all models (to remove bloat from main)
+
+# helper function to plot kappa and accuracy scores for all models
 def plot_model_kappa_accuracy(kappa_scores, acc_scores):
     models = ["Majority Class", "Naive Bayes", "Logistic Regression", "SVC"]
     x = range(len(models))
+
     plt.figure(figsize=(12, 6))
+
     plt.subplot(1, 2, 1)
-    plt.bar(x,[score + 1 for score in kappa_scores],bottom=-1 , color=['blue', 'orange', 'green'])
+    plt.bar(x, [score + 1 for score in kappa_scores], bottom=-1)
     plt.xticks(x, models)
     plt.title('Kappa Scores by Model')
     plt.ylabel('Kappa Score')
+
     plt.subplot(1, 2, 2)
-    plt.bar(x, acc_scores, color=['blue', 'orange', 'green'])
+    plt.bar(x, acc_scores)
     plt.xticks(x, models)
     plt.title('Accuracy Scores by Model')
     plt.ylabel('Accuracy Score')
+
     plt.tight_layout()
-    # save plot as image 
     plt.savefig("plots/model_kappa_accuracy.png")
 
 
 def feature_processing(cs):
-        # replace twitter handles with @USER
+    # replace twitter handles with @USER
     cs["text"] = cs["text"].str.replace(r"\B@\w+", "@USER", regex=True)
 
-    # fix html unicode (&amp; -> &, &lt; -> <, etc.)
+    # fix html unicode
     cs["text"] = cs["text"].apply(html.unescape)
 
     # remove URLs
     cs["text"] = cs["text"].str.replace(r"http\S+|www\.\S+", "", regex=True)
+
 
 # THIS IS WHERE ENTIRE PIPELINE HAPPENS!
 def main():
@@ -117,61 +137,98 @@ def main():
     feature_processing(cs_train)
     feature_processing(gold_train)
     
-    # scores for writing later
-    agr_score, acc_score = agreement_accuracy_score(cs_train,gold_train)
-    print("Agreement score (kappa) is (when comparing datasets): ",agr_score)
-    print("Accuracy score is (when comparing datasets): ",acc_score)
+    # agreement scores
+    agr_score, acc_score = agreement_accuracy_score(cs_train, gold_train)
+    print("Agreement score (kappa): ", agr_score)
+    print("Accuracy score: ", acc_score)
 
-    # Use-TF-IDF vectorizer
-    X_cs = tfidf_vectorize(cs_train["text"])
-    y_cs = cs_train["sentiment"]
-    X_gold = tfidf_vectorize(gold_train["text"])
+    # Use raw text directly (Pipeline handles vectorization!)
+    X_gold = gold_train["text"]
     y_gold = gold_train["sentiment"]
 
-    # Majority class model (always predict the most common class in the training data (neutral in this case))
-    # This is our trivial baseline
-    majority_class = y_cs.mode()[0]
+    # Majority class baseline
+    majority_class = y_gold.mode()[0]
     majority_predictions = [majority_class] * len(y_gold)
     majority_kappa = cohen_kappa_score(majority_predictions, y_gold)
     majority_acc = accuracy_score(majority_predictions, y_gold)
+
     print("Majority class Kappa :", majority_kappa)
     print("Majority class Accuracy :", majority_acc)
-    
-    # Naive Bayes Model, Model nr 1
+
+    # Naive Bayes Model
     X_train_nb, X_test_nb, y_train_nb, y_test_nb = test_train_split(X_gold, y_gold)
-    nb_model = train_naive_bayes(X_train_nb, y_train_nb)
+    nb_model = train_naive_bayes_pipeline()
+    nb_model.fit(X_train_nb, y_train_nb)
     nb_predictions = nb_model.predict(X_test_nb)
+
     nb_kappa = cohen_kappa_score(nb_predictions, y_test_nb)
     nb_acc = accuracy_score(nb_predictions, y_test_nb)
-    print("Naive Bayes Kappa :", nb_kappa)
-    print("Naive Bayes Accuracy :", nb_acc)    
 
-    # Logistic Regression Model, Model nr 2 
+    print("Naive Bayes Kappa :", nb_kappa)
+    print("Naive Bayes Accuracy :", nb_acc)
+
+    # Logistic Regression Model
     X_train_lr, X_test_lr, y_train_lr, y_test_lr = test_train_split(X_gold, y_gold)
-    lr_model = train_logistic_regression(X_train_lr, y_train_lr)
+    lr_model = train_logistic_regression_pipeline()
+    lr_model.fit(X_train_lr, y_train_lr)
     lr_predictions = lr_model.predict(X_test_lr)
+
     lr_kappa = cohen_kappa_score(lr_predictions, y_test_lr)
     lr_acc = accuracy_score(lr_predictions, y_test_lr)
+
     print("Logistic Regression Kappa :", lr_kappa)
     print("Logistic Regression Accuracy :", lr_acc)
 
-    # SVC Model, Model nr 3
+    # SVC Model
     X_train_svc, X_test_svc, y_train_svc, y_test_svc = test_train_split(X_gold, y_gold)
-    svc_model = train_svc(X_train_svc, y_train_svc)
+    svc_model = train_svc_pipeline()
+    svc_model.fit(X_train_svc, y_train_svc)
     svc_predictions = svc_model.predict(X_test_svc)
+
     svc_kappa = cohen_kappa_score(svc_predictions, y_test_svc)
     svc_acc = accuracy_score(svc_predictions, y_test_svc)
+
     print("SVC Kappa :", svc_kappa)
     print("SVC Accuracy :", svc_acc)
 
-    # plot all models kappa and accuracy scores using helper
+    # plot results
     kappa_scores = [majority_kappa, nb_kappa, lr_kappa, svc_kappa]
     acc_scores = [majority_acc, nb_acc, lr_acc, svc_acc]
     plot_model_kappa_accuracy(kappa_scores, acc_scores)
 
+    # Tune Hyperparameters for Naive Bayes, Logistic Regression, and SVC using GridSearchCV
+
+    # Naive Bayes Hyperparameter Tuning
+    nb_param_grid = {
+        'vectorizer__ngram_range': [(1, 1), (1, 2)],
+        'classifier__alpha': [0.01, 0.1, 1]
+    }
+    nb_grid_search = GridSearchCV(train_naive_bayes_pipeline(), nb_param_grid, cv=5, n_jobs=-1)
+    nb_grid_search.fit(X_gold, y_gold)
+    print("Best Naive Bayes Parameters: ", nb_grid_search.best_params_)
+
+    # Logistic Regression Hyperparameter Tuning
+    lr_param_grid = {
+        'vectorizer__ngram_range': [(1, 1), (1, 2)],
+        'classifier__C': [0.01, 0.1, 1]
+    }
+    lr_grid_search = GridSearchCV(train_logistic_regression_pipeline(), lr_param_grid, cv=5, n_jobs=-1)
+    lr_grid_search.fit(X_gold, y_gold)
+    print("Best Logistic Regression Parameters: ", lr_grid_search.best_params_)
+
+    # SVC Hyperparameter Tuning
+    svc_param_grid = {
+        'vectorizer__ngram_range': [(1, 1), (1, 2)],
+        'classifier__C': [0.01, 0.1, 1],
+        'classifier__kernel': ['linear', 'rbf']
+    }
+    svc_grid_search = GridSearchCV(train_svc_pipeline(), svc_param_grid, cv=5, n_jobs=-1)
+    svc_grid_search.fit(X_gold, y_gold)
+    print("Best SVC Parameters: ", svc_grid_search.best_params_)
 
 
-    
+
+
 
 if __name__ == "__main__":
     main()
