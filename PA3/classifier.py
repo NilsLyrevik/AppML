@@ -85,26 +85,26 @@ def agreement_accuracy_score(crowd, gold):
 
 
 # helper function to plot kappa and accuracy scores for all models
-def plot_model_kappa_accuracy(kappa_scores, acc_scores):
+def plot_model_kappa_accuracy(kappa_scores, acc_scores, str):
     models = ["Majority Class", "Naive Bayes", "Logistic Regression", "SVC"]
     x = range(len(models))
 
     plt.figure(figsize=(12, 6))
 
     plt.subplot(1, 2, 1)
-    plt.bar(x, [score + 1 for score in kappa_scores], bottom=-1)
+    plt.bar(x, [score + 1 for score in kappa_scores], bottom=-1,color = ['red','green','blue', 'orange'])
     plt.xticks(x, models)
     plt.title('Kappa Scores by Model')
     plt.ylabel('Kappa Score')
 
     plt.subplot(1, 2, 2)
-    plt.bar(x, acc_scores)
+    plt.bar(x, acc_scores, color = ['red','green','blue', 'orange'])
     plt.xticks(x, models)
     plt.title('Accuracy Scores by Model')
     plt.ylabel('Accuracy Score')
 
     plt.tight_layout()
-    plt.savefig("plots/model_kappa_accuracy.png")
+    plt.savefig(f"plots/model_kappa_accuracy_{str}.png")
 
 
 def feature_processing(cs):
@@ -194,7 +194,7 @@ def main():
     # plot results
     kappa_scores = [majority_kappa, nb_kappa, lr_kappa, svc_kappa]
     acc_scores = [majority_acc, nb_acc, lr_acc, svc_acc]
-    plot_model_kappa_accuracy(kappa_scores, acc_scores)
+    plot_model_kappa_accuracy(kappa_scores, acc_scores, "initial")
 
     # Tune Hyperparameters for Naive Bayes, Logistic Regression, and SVC using GridSearchCV
 
@@ -225,6 +225,52 @@ def main():
     svc_grid_search = GridSearchCV(train_svc_pipeline(), svc_param_grid, cv=5, n_jobs=-1)
     svc_grid_search.fit(X_gold, y_gold)
     print("Best SVC Parameters: ", svc_grid_search.best_params_)
+
+    # run models again and use best hyperparameters to evaluate on test set
+    # Naive Bayes with best hyperparameters
+    nb_best_model = Pipeline([
+        ("vectorizer", TfidfVectorizer(ngram_range=nb_grid_search.best_params_['vectorizer__ngram_range'])),
+        ("classifier", MultinomialNB(alpha=nb_grid_search.best_params_['classifier__alpha']))
+    ])
+    nb_best_model.fit(X_train_nb, y_train_nb)
+    nb_best_predictions = nb_best_model.predict(X_test_nb)
+    nb_best_kappa = cohen_kappa_score(nb_best_predictions, y_test_nb)
+    nb_best_acc = accuracy_score(nb_best_predictions, y_test_nb)
+    print("Tuned Naive Bayes Kappa :", nb_best_kappa)
+    print("Tuned Naive Bayes Accuracy :", nb_best_acc)
+
+    # Logistic Regression with best hyperparameters
+    lr_best_model = Pipeline([
+        ("vectorizer", TfidfVectorizer(ngram_range=lr_grid_search.best_params_['vectorizer__ngram_range'])),
+        ("classifier", LogisticRegression(C=lr_grid_search.best_params_['classifier__C'], max_iter=1000))
+    ])
+    lr_best_model.fit(X_train_lr, y_train_lr)
+    lr_best_predictions = lr_best_model.predict(X_test_lr)
+    lr_best_kappa = cohen_kappa_score(lr_best_predictions, y_test_lr)
+    lr_best_acc = accuracy_score(lr_best_predictions, y_test_lr)
+    print("Tuned Logistic Regression Kappa :", lr_best_kappa)
+    print("Tuned Logistic Regression Accuracy :", lr_best_acc)
+
+    # SVC with best hyperparameters
+    svc_best_model = Pipeline([
+        ("vectorizer", TfidfVectorizer(ngram_range=svc_grid_search.best_params_['vectorizer__ngram_range'])),
+        ("classifier", SVC(C=svc_grid_search.best_params_['classifier__C'], kernel=svc_grid_search.best_params_['classifier__kernel']))
+    ])
+    svc_best_model.fit(X_train_svc, y_train_svc)
+    svc_best_predictions = svc_best_model.predict(X_test_svc)
+    svc_best_kappa = cohen_kappa_score(svc_best_predictions, y_test_svc)
+    svc_best_acc = accuracy_score(svc_best_predictions, y_test_svc)
+    print("Tuned SVC Kappa :", svc_best_kappa)
+    print("Tuned SVC Accuracy :", svc_best_acc)
+
+    # plot results for tuned models
+    tuned_kappa_scores = [majority_kappa, nb_best_kappa, lr_best_kappa, svc_best_kappa]
+    tuned_acc_scores = [majority_acc, nb_best_acc, lr_best_acc, svc_best_acc]
+    plot_model_kappa_accuracy(tuned_kappa_scores, tuned_acc_scores, "tuned")
+
+
+
+
 
 
 
