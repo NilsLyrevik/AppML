@@ -7,6 +7,7 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
 
 
 # FEATURE REPRESENTATION 
@@ -40,6 +41,11 @@ def train_logistic_regression(X_train, y_train):
     model.fit(X_train, y_train)
     return model
 
+def train_svc(X_train, y_train):
+    model = SVC(kernel='linear')
+    model.fit(X_train, y_train)
+    return model
+
 def test_train_split(X, y, test_size=0.2):
     (X_train, X_test, y_train, y_test) = train_test_split(X, y, test_size=test_size, random_state=1337)
     return X_train, X_test, y_train, y_test
@@ -64,11 +70,11 @@ def agreement_accuracy_score(crowd, gold):
 
 # helper function to plot kappa and accuracy scores for all models (to remove bloat from main)
 def plot_model_kappa_accuracy(kappa_scores, acc_scores):
-    models = ["Majority Class", "Naive Bayes", "Logistic Regression"]
+    models = ["Majority Class", "Naive Bayes", "Logistic Regression", "SVC"]
     x = range(len(models))
     plt.figure(figsize=(12, 6))
     plt.subplot(1, 2, 1)
-    plt.bar(x, kappa_scores, color=['blue', 'orange', 'green'])
+    plt.bar(x,[score + 1 for score in kappa_scores],bottom=-1 , color=['blue', 'orange', 'green'])
     plt.xticks(x, models)
     plt.title('Kappa Scores by Model')
     plt.ylabel('Kappa Score')
@@ -149,9 +155,18 @@ def main():
     print("Logistic Regression Kappa :", lr_kappa)
     print("Logistic Regression Accuracy :", lr_acc)
 
+    # SVC Model, Model nr 3
+    X_train_svc, X_test_svc, y_train_svc, y_test_svc = test_train_split(X_gold, y_gold)
+    svc_model = train_svc(X_train_svc, y_train_svc)
+    svc_predictions = svc_model.predict(X_test_svc)
+    svc_kappa = cohen_kappa_score(svc_predictions, y_test_svc)
+    svc_acc = accuracy_score(svc_predictions, y_test_svc)
+    print("SVC Kappa :", svc_kappa)
+    print("SVC Accuracy :", svc_acc)
+
     # plot all models kappa and accuracy scores using helper
-    kappa_scores = [majority_kappa, nb_kappa, lr_kappa]
-    acc_scores = [majority_acc, nb_acc, lr_acc]
+    kappa_scores = [majority_kappa, nb_kappa, lr_kappa, svc_kappa]
+    acc_scores = [majority_acc, nb_acc, lr_acc, svc_acc]
     plot_model_kappa_accuracy(kappa_scores, acc_scores)
 
 
